@@ -328,6 +328,7 @@ void get_spd_spec(void)
     if (index == -1) 
     {
     	// Unknown SMBUS Controller, exit
+        cprint(LINE_SPD-2, 0, "No / unknown SMBUS controller");
 			return;
     }
 
@@ -336,15 +337,38 @@ void get_spd_spec(void)
 		cprint(LINE_SPD-1, 0, "--------------------------");    
 		
     for (j = 0; j < 8; j++) {
-			if (smbcontrollers[index].read_spd(j) == 0) {	
+			if (smbcontrollers[index].read_spd(j) == 0) {
 				curcol = 1;
-				if(spd_raw[2] == 0x0b){
-				  // We are here if DDR3 present
-				 
-				  // First print slot#, module capacity
-					cprint(LINE_SPD+k, curcol, " - Slot   :");
-					dprint(LINE_SPD+k, curcol+8, k, 1, 0);
+				cprint(LINE_SPD+k, curcol, " - Slot   :");
+				dprint(LINE_SPD+k, curcol+8, k, 1, 0);
 
+				// TODO DDR5 & LPDDR5 - JEDEC 21-C annex ??? - up to 1024 bytes of manufacturer + reserved + user data.
+				if (spd_raw[2] == 0x13) {
+					cprint(LINE_SPD+k, curcol+12, "LPDDR5");
+				}
+				else if (spd_raw[2] == 0x12) {
+					cprint(LINE_SPD+k, curcol+12, "DDR5");
+				}
+				// TODO LPDDR3, LPDDR4 & LPDDR4X - JEDEC 21-C annex M - up to 512 bytes of manufacturer + reserved + user data.
+				else if (spd_raw[2] == 0x11) {
+					cprint(LINE_SPD+k, curcol+12, "LPDDR4X");
+				}
+				else if (spd_raw[2] == 0x10) {
+					cprint(LINE_SPD+k, curcol+12, "LPDDR4");
+				}
+				else if (spd_raw[2] == 0x0f) {
+					cprint(LINE_SPD+k, curcol+12, "LPDDR3");
+				}
+				// TODO DDR4 & DDR4E - JEDEC 21-C annex L - up to 512 bytes of manufacturer + reserved + user data.
+				else if (spd_raw[2] == 0x0e) {
+					cprint(LINE_SPD+k, curcol+12, "DDR4E");
+				}
+				else if (spd_raw[2] == 0x0c) {
+					cprint(LINE_SPD+k, curcol+12, "DDR4");
+				}
+				// DDR3 - JEDEC 21-C annex K - up to 256 bytes of manufacturer + reserved + user data.
+				else if(spd_raw[2] == 0x0b) {
+					// Print module capacity
 					module_size = get_ddr3_module_size(spd_raw[4] & 0xF, spd_raw[8] & 0x7, spd_raw[7] & 0x7, spd_raw[7] >> 3);
 					temp_nbd = getnum(module_size); curcol += 12;
 					dprint(LINE_SPD+k, curcol, module_size, temp_nbd, 0); curcol += temp_nbd;
@@ -413,8 +437,8 @@ void get_spd_spec(void)
 								curcol++;		
 							}			
 
-							// Detect Week and Year of Manufacturing (Think to upgrade after 2015 !!!)
-							if(curcol <= 72 && spd_raw[120] > 3 && spd_raw[120] < 16 && spd_raw[121] < 55)
+							// Detect Week and Year of Manufacturing
+							if(curcol <= 72 && spd_raw[120] > 3 /*&& spd_raw[120] < 16*/ && spd_raw[121] < 55)
 							{
 								cprint(LINE_SPD+k, curcol, "(W");	
 								dprint(LINE_SPD+k, curcol+2, spd_raw[121], 2, 0);
@@ -434,12 +458,13 @@ void get_spd_spec(void)
 			    	}
 					}		
 				}
-			// We enter this function if DDR2 is detected
-			if(spd_raw[2] == 0x08){				
-					 // First print slot#, module capacity
-					cprint(LINE_SPD+k, curcol, " - Slot   :");
-					dprint(LINE_SPD+k, curcol+8, k, 1, 0);
-
+				// DDR2 FB-DIMM & DDR2 FB-DIMM Probe - JEDEC 21-C appendix X / annex G - up to 256 bytes of manufacturer + reserved + user data.
+				else if (spd_raw[2] == 0x09 || spd_raw[2] == 0x0a) {
+					cprint(LINE_SPD+k, curcol+12, "FB-DIMM");
+				}
+				// DDR2 - JEDEC 21-C annex J - up to 256 bytes of manufacturer + reserved + user data.
+				else if(spd_raw[2] == 0x08) {
+					// Print module capacity
 					module_size = get_ddr2_module_size(spd_raw[31], spd_raw[5]);
 					temp_nbd = getnum(module_size); curcol += 12;
 					dprint(LINE_SPD+k, curcol, module_size, temp_nbd, 0); curcol += temp_nbd;
@@ -486,6 +511,17 @@ void get_spd_spec(void)
 					}				
 
 				}	
+				// TODO DDR - JEDEC 21-C appendix D - up to 256 bytes of manufacturer + reserved + user data.
+				else if (spd_raw[2] == 0x07) {
+					cprint(LINE_SPD+k, curcol+12, "DDR");
+				}
+				// TODO SDRAM - JEDEC 21-C appendix E + annex I for VCSDRAM - up to 256 bytes of manufacturer + reserved + user data.
+				else if (spd_raw[2] == 0x04) {
+					cprint(LINE_SPD+k, curcol+12, "SDRAM");
+				}
+				else {
+					cprint(LINE_SPD+k, curcol+12, "unhandled memory type !");
+				}
 			k++;
 			}
     }

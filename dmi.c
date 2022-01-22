@@ -102,6 +102,20 @@ struct cpu_map {
 	uint16_t thread_count_2;
 } __attribute__((packed));
 
+/*
+ * Memory Module Information (obsolete in SMBIOS 2.1+, but that's all the SMBIOS in some old motherboards has to offer)
+ * table 33 in SMBIOS 3.3 standard
+ */
+struct mem_mod_info {
+	struct tstruct_header header; /* 0x00 SMBIOS 2.0+ */
+	uint8_t  socket_designation;
+	uint8_t  bank_connections;
+	uint8_t  current_speed;
+	uint16_t current_memory_type;
+	uint8_t  installed_size;
+	uint8_t  enabled_size;
+	uint8_t  error_status;
+} __attribute__((packed));
 
 /* 
  * Memory Device
